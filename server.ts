@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
-import { createServer as createViteServer } from "vite";
 import { User, Material, Entrada, Salida, Movimiento } from "./src/types.js";
 
 const app = express();
@@ -9,8 +8,28 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// Path for Database
-const DATA_DIR = path.join(process.cwd(), "data");
+// Buscar directorio persistente para base de datos
+let baseDataDir = process.cwd();
+try {
+  // Si process.cwd() es una ruta protegida como "C:\Windows\System32" o "C:\Program Files",
+  // usamos la ruta de datos de usuario segura para evitar crasheos de permisos.
+  const isCwdWriteProtected = 
+    process.cwd().toLowerCase().includes("system32") || 
+    process.cwd().toLowerCase().includes("program files") || 
+    process.cwd().toLowerCase().includes("windows");
+  
+  if (isCwdWriteProtected) {
+    // Usamos require dinámico por eval para evadir chequeos estáticos de esbuild / ESM
+    const electron = eval("require('electron')");
+    if (electron && electron.app) {
+      baseDataDir = electron.app.getPath("userData");
+    }
+  }
+} catch (e) {
+  // Fallback silencioso en desarrollo puro o sin node integration
+}
+
+const DATA_DIR = path.join(baseDataDir, "data");
 const DB_PATH = path.join(DATA_DIR, "db.json");
 
 // Ensure Data directory exists
@@ -698,13 +717,19 @@ async function startServer() {
   const isProd = process.env.NODE_ENV === "production";
 
   if (!isProd) {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa"
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), "dist");
+    // Si estamos empaquetados en producción, el archivo index.html estará en la misma carpeta
+    // que el script server.cjs compilado. De lo contrario estará en /dist.
+    const distPath = fs.existsSync(path.join(__dirname, "index.html"))
+      ? __dirname
+      : path.join(__dirname, "dist");
+
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
@@ -712,8 +737,12 @@ async function startServer() {
   }
 
   // Start Server
-  app.listen(PORT, "0.0.0.0", () => {
+  const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
+  });
+
+  server.on("error", (err: any) => {
+    console.error("Error al iniciar el servidor Express:", err);
   });
 }
 
