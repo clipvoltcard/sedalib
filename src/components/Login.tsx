@@ -89,24 +89,6 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           </p>
         </div>
 
-        {/* Credentials hints card */}
-        <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 rounded-xl text-xs text-blue-800 dark:text-blue-300">
-          <div className="font-semibold flex items-center gap-1.5 mb-1">
-            <Shield className="w-3.5 h-3.5" />
-            Credenciales de Acceso Rápidas:
-          </div>
-          <div className="grid grid-cols-2 gap-2 mt-1 font-mono">
-            <div>
-              <span className="font-sans text-slate-500">Admin:</span> Danae<br />
-              <span className="font-sans text-slate-500">Clave:</span> 88888888
-            </div>
-            <div>
-              <span className="font-sans text-slate-500">Técnico:</span> juan_tecnico<br />
-              <span className="font-sans text-slate-500">Clave:</span> 123
-            </div>
-          </div>
-        </div>
-
         <form onSubmit={handleLogin} className="space-y-5">
           {error && (
             <div className="flex items-start gap-2.5 p-3 rounded-lg bg-rose-50 text-rose-800 border border-rose-200 text-sm">
