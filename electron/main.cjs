@@ -2,6 +2,24 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
+// Forzar NODE_ENV de producción si la app está empaquetada
+if (app.isPackaged) {
+  process.env.NODE_ENV = 'production';
+}
+
+// Iniciar el servidor Express compilado de forma automática
+try {
+  const serverPath = path.join(__dirname, '../dist/server.cjs');
+  if (fs.existsSync(serverPath)) {
+    require(serverPath);
+    console.log("Servidor Express de Sedalib iniciado en puerto 3000.");
+  } else {
+    console.warn("No se encontró dist/server.cjs. Asegúrate de compilar antes con npm run build.");
+  }
+} catch (err) {
+  console.error("Error al arrancar el servidor backend:", err);
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
@@ -19,25 +37,20 @@ function createWindow() {
   // Omitir o quitar la barra de menú predeterminada
   win.setMenuBarVisibility(false);
 
-  // Determinar si estamos en desarrollo o producción
-  // electron-builder establece app.isPackaged en true para la versión empaquetada
-  const isDev = !app.isPackaged;
+  // Intentar cargar la aplicación desde el servidor local (puerto 3000)
+  // Nota: Dado que iniciamos el servidor arriba, cargamos http://localhost:3000 tanto
+  // en desarrollo como en producción. Esto asegura que la base de datos y la API funcionen.
+  const loadApp = () => {
+    win.loadURL('http://localhost:3000').catch((err) => {
+      console.log("Esperando a que el servidor Express levante... reintentando en 1s");
+      setTimeout(loadApp, 1000);
+    });
+  };
 
-  if (isDev) {
-    // En desarrollo, cargar la app desde el servidor dev running en el puerto 3000
-    win.loadURL('http://localhost:3000').catch(() => {
-      // Reintentar si el servidor aún no levanta
-      setTimeout(() => {
-        win.loadURL('http://localhost:3000');
-      }, 1000);
-    });
+  loadApp();
+
+  if (!app.isPackaged) {
     win.webContents.openDevTools();
-  } else {
-    // En producción (dentro del EXE), cargar el archivo compilado por Vite
-    const indexPath = path.join(__dirname, '../dist/index.html');
-    win.loadFile(indexPath).catch((err) => {
-      console.error("Error al cargar index.html:", err);
-    });
   }
 }
 
