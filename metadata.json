@@ -1,0 +1,6 @@
+{
+  "name": "Gestión de Materiales y Control de Stock",
+  "description": "Sistema profesional de inventario, entradas, salidas, control de stock y reportes con roles de administrador y técnico.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
