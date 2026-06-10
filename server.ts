@@ -2,13 +2,7 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
-import { fileURLToPath } from "url";
 import { User, Material, Entrada, Salida, Movimiento } from "./src/types.js";
-
-// @ts-ignore
-const currentFilename = typeof __filename !== 'undefined' ? __filename : fileURLToPath(import.meta['url'] as any);
-// @ts-ignore
-const currentDirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(currentFilename);
 
 const app = express();
 const PORT = 3000;
